@@ -1,11 +1,18 @@
 <?php
 /*
-Plugin Name: Country Redirect
-Plugin URI: http://www.chesteralan.com/wordpress/country-redirect
-Version: 1.0.0
-Author: Chester Alan
-Author URI: http://www.chesteralan.com/
-Description: Detects Country by matching IP to GeoIP Database and redirect it to the specified URL.
+Plugin Name: mod_geoip Country Redirect
+Plugin URI: https://github.com/pjhile/Country-Redirect-Wordpress-Plugin
+Version: 1.1.0
+Author: PJ Hile
+Author URI: http://www.pjhile.com/
+Description: Detects country with mod_geoip and redirects to a specified URL.
+
+Original Plugin Name: Country Redirect
+Original Plugin URI: http://www.chesteralan.com/wordpress/country-redirect
+Original Version: 1.0.0
+Original Author: Chester Alan
+Original Author URI: http://www.chesteralan.com/
+Original Description: Detects Country by matching IP to GeoIP Database and redirect it to the specified URL.
 */
 
 class CACountryRedirect {
@@ -268,26 +275,8 @@ ADMINPAGE;
 		}
 		
 		include_once("geoip.inc");
-		$geodbfile = WP_PLUGIN_DIR . "/" . dirname ( plugin_basename ( __FILE__ ) ) . "/GeoIP.dat";
-		$geodb6file = WP_PLUGIN_DIR . "/" . dirname ( plugin_basename ( __FILE__ ) ) . "/GeoIPv6.dat";
 		
-		$countryCode = NULL;
-		switch($ipv) {
-			case 4:
-				if(file_exists($geodbfile)) {
-					$geoip = geoip_open ($geodbfile, GEOIP_STANDARD );
-					$countryCode = geoip_country_code_by_addr ( $geoip, $ip_address );
-					geoip_close ( $geoip );
-				}
-				break;
-			case 6:
-				if(file_exists(geodb6file)) {
-					$geoip = geoip_open($geodb6file,GEOIP_STANDARD);
-					$countryCode = geoip_country_code_by_addr_v6 ( $geoip, $ip_address );
-					geoip_close($geoip);
-				}
-				break;
-		}
+		$countryCode = $_SERVER['GEOIP_COUNTRY_CODE'];
 		
 		if($countryCode != NULL)
 		{
