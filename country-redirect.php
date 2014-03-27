@@ -120,24 +120,44 @@ CSS;
 	include_once("geoip.inc");
 	
 	$redirections = get_option('CACountryRedirections');
+	$first_visit_only = get_option('CACountryFirstVisitOnly');
 	
 	if(! is_array ( $redirections ) ) {
 		$redirections = array();
 	}
+
+	if(! is_array ( $first_visit_only ) ) {
+		$first_visit_only = array();
+	}
+
 	if( isset($_POST['submit']) && ($_POST['submit'] == 'Add') )
 	{
 		if($_POST['url'] != "") {
 			$redirections[$_POST['code']] = $_POST['url'];
 			update_option('CACountryRedirections', $redirections);
 		}
+
+		if($_POST['first_visit_only'] != "") {
+			$first_visit_only[$_POST['code']] = 1;
+			update_option('CACountryFirstVisitOnly', $first_visit_only);
+		}
+
 	} elseif( isset($_POST['submit']) && ($_POST['submit'] == 'Update') )
 	{
+		$first_visit_only = array();
+		if(isset($_POST['first_visit_only']) && ($_POST['first_visit_only'] != '')) {
+			foreach($_POST['first_visit_only'] as $id) {
+				$first_visit_only[$id] = 1;
+			}
+		}
+
 		if(isset($_POST['delete']) && ($_POST['delete'] != '')) {
 			foreach($_POST['delete'] as $id) {
 				unset($redirections[$id]);
 			}
 		}
 		update_option('CACountryRedirections', $redirections);
+		update_option('CACountryFirstVisitOnly', $first_visit_only);
 		if(isset($_POST['homepage_only']) && ($_POST['homepage_only'] == 1)) {
 			update_option('CACountryRedirections_homepage_only', '1');
 		} else {
@@ -177,6 +197,8 @@ echo <<<ADMINPAGE
 			</select>
 		<label for="url">URL</label>
 			<input type="text" name="url" value="" class="regular-text" />
+		<label for="first_visit_only">First Visit Only</label>
+			<input type="checkbox" name="first_visit_only" id="first_visit_only" value="1" />
 			<input type="submit" name="submit" id="submit" class="button-primary" value="Add">
 	</form>
 	</div>
@@ -189,6 +211,7 @@ echo <<<ADMINPAGE
 					<td width="20">Code</td>
 					<td width="150">Country</td>
 					<td>URL</td>
+					<td align="center" width="54">First Visit Only</td>
 					<td align="center" width="54">Delete</td>
 				</tr>
 			</thead>
@@ -209,11 +232,16 @@ ADMINPAGE;
 }
 echo '<tbody>';
 if($redirections) foreach($redirections as $key=>$url) {
+	$checked = '';
+	if ( !empty( $first_visit_only[$key] ) ) {
+		$checked = 'checked="checked"';
+	}
 echo <<<ADMINPAGE
 		<tr id='r-{$key}'>
 		<td>{$key}</td>
 		<td>{$countryListAll[$key]}</td>
 		 <td>{$url}</td>
+		 <td align="center"><input type="checkbox" name="first_visit_only[]" value="{$key}" {$checked} /></td>
 		 <td align="center"><input type="checkbox" name="delete[]" value="{$key}" /></td>
 		 </tr>
 ADMINPAGE;
@@ -280,9 +308,18 @@ ADMINPAGE;
 		
 		if($countryCode != NULL)
 		{
+			// if first time only cookie set for this country code, return
+			if ( isset( $_COOKIE['country-redirect-'.$countryCode]) ) {
+				return false;
+			}
+
 			if( isset($redirections[$countryCode]) ) { 
+
+				$first_visit_only = get_option('CACountryFirstVisitOnly');
+				if ( isset( $first_visit_only[$countryCode] ) ) {
+					setcookie('country-redirect-'.$countryCode, '1', time()+60*60*24*360, '/');
+				}
 				
-		 
 				if ( ( $homepage_only == 0 ) && (strpos($redirections[$countryCode], $_SERVER['SERVER_NAME']) !== false) ) {
 					return false;
 				}
